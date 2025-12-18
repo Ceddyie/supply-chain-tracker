@@ -2,23 +2,29 @@ package de.hskl.shipmentservice;
 
 import de.hskl.shipmentservice.dto.CreateShipmentDto;
 import de.hskl.shipmentservice.dto.ShipmentDetailDto;
+import de.hskl.shipmentservice.dto.ShipmentListItemDto;
+import de.hskl.shipmentservice.entity.Checkpoint;
 import de.hskl.shipmentservice.entity.Shipment;
+import de.hskl.shipmentservice.exceptions.GlobalExceptionHandler;
 import de.hskl.shipmentservice.repository.CheckpointRepository;
 import de.hskl.shipmentservice.repository.ShipmentRepository;
 import de.hskl.shipmentservice.service.ShipmentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -34,39 +40,203 @@ public class ShipmentServiceTest {
     @InjectMocks
     private ShipmentService shipmentService;
 
-    private CreateShipmentDto testCreateShipment;
+    private CreateShipmentDto testCreateDto;
     private Shipment testShipment;
+    private Checkpoint testCheckpoint;
+    private UUID testShipmentId;
 
     @BeforeEach
     void setUp() {
-        testCreateShipment = new CreateShipmentDto(
+        testShipmentId = UUID.randomUUID();
+
+        testCreateDto = new CreateShipmentDto(
                 "Test Sender",
                 "Test Receiver",
                 Instant.now().plus(2, ChronoUnit.DAYS)
         );
 
-        testShipment = new Shipment();
-        testShipment.setId(UUID.randomUUID());
-        testShipment.setOwnerUserId("user-123");
-        testShipment.setCompanyId("company-123");
-        testShipment.setSender(testCreateShipment.sender());
-        testShipment.setReceiver(testCreateShipment.receiver());
-        testShipment.setCurrentStatus("CREATED");
-        testShipment.setExpectedDelivery(testCreateShipment.expectedDelivery());
-        testShipment.setCreatedAt(Instant.now());
+        testShipment = Shipment.builder()
+                .id(testShipmentId)
+                .ownerUserId("user-123")
+                .companyId("company-abc")
+                .sender(testCreateDto.sender())
+                .receiver(testCreateDto.receiver())
+                .currentStatus("CREATED")
+                .expectedDelivery(testCreateDto.expectedDelivery())
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .build();
+
+        testCheckpoint = Checkpoint.builder()
+                .id(UUID.randomUUID())
+                .shipment(testShipment)
+                .timestamp(Instant.now())
+                .status("CREATED")
+                .message("Shipment created")
+                .build();
     }
 
     @Test
-    void createShipment_shouldSaveAndReturnShipment() {
+    void createShipment_shouldSaveShipmentAndCheckpoint() {
         when(shipmentRepository.save(any(Shipment.class))).thenReturn(testShipment);
+        when(checkpointRepository.save(any(Checkpoint.class))).thenReturn(testCheckpoint);
 
-        ShipmentDetailDto result = shipmentService.createShipment(testCreateShipment, "user-123", "company-123");
+        ShipmentDetailDto result = shipmentService.createShipment(testCreateDto, "user-123", "company-123");
 
         assertNotNull(result);
         assertEquals("Test Sender", result.sender());
         assertEquals("Test Receiver", result.receiver());
         assertEquals("CREATED", result.currentStatus());
+        assertEquals(1, result.timeline().size());
 
         verify(shipmentRepository, times(1)).save(any(Shipment.class));
+        verify(checkpointRepository, times(1)).save(any(Checkpoint.class));
+    }
+
+    @Test
+    void createShipment_shouldSetCorrectInitialValues() {
+        when(shipmentRepository.save(any(Shipment.class))).thenReturn(testShipment);
+        when(checkpointRepository.save(any(Checkpoint.class))).thenReturn(testCheckpoint);
+
+        shipmentService.createShipment(testCreateDto, "user-123", "company-abc");
+
+        ArgumentCaptor<Shipment> shipmentCaptor = ArgumentCaptor.forClass(Shipment.class);
+        verify(shipmentRepository).save(shipmentCaptor.capture());
+
+        Shipment savedShipment = shipmentCaptor.getValue();
+        assertEquals("user-123", savedShipment.getOwnerUserId());
+        assertEquals("company-abc", savedShipment.getCompanyId());
+        assertEquals("CREATED", savedShipment.getCurrentStatus());
+        assertNotNull(savedShipment.getCreatedAt());
+        assertNotNull(savedShipment.getUpdatedAt());
+    }
+
+    @Test
+    void createShipment_shouldCreateInitialCheckpoint() {
+        when(shipmentRepository.save(any(Shipment.class))).thenReturn(testShipment);
+        when(checkpointRepository.save(any(Checkpoint.class))).thenReturn(testCheckpoint);
+
+        shipmentService.createShipment(testCreateDto, "user-123", "company-abc");
+
+        ArgumentCaptor<Checkpoint> checkpointCaptor = ArgumentCaptor.forClass(Checkpoint.class);
+        verify(checkpointRepository).save(checkpointCaptor.capture());
+
+        Checkpoint savedCheckpoint = checkpointCaptor.getValue();
+        assertEquals("CREATED", savedCheckpoint.getStatus());
+        assertEquals("Shipment created", savedCheckpoint.getMessage());
+        assertNotNull(savedCheckpoint.getTimestamp());
+    }
+
+    @Test
+    void getShipment_whenOwnerRequests_shouldReturnShipment() {
+        when(shipmentRepository.findById(testShipmentId)).thenReturn(Optional.of(testShipment));
+        when(checkpointRepository.findByShipmentIdOrderByTimestampAsc(testShipmentId)).thenReturn(List.of(testCheckpoint));
+
+        ShipmentDetailDto result = shipmentService.getShipment(
+                testShipmentId,
+                "user-123",
+                "company-abc",
+                false
+        );
+
+        assertNotNull(result);
+        assertEquals(testShipmentId, result.id());
+        assertEquals("Test Sender", result.sender());
+        assertEquals("Test Receiver", result.receiver());
+        assertEquals(1, result.timeline().size());
+    }
+
+    @Test
+    void getShipment_whenCompanyMemberRequests_shouldReturnShipment() {
+        when(shipmentRepository.findById(testShipmentId)).thenReturn(Optional.of(testShipment));
+        when(checkpointRepository.findByShipmentIdOrderByTimestampAsc(testShipmentId)).thenReturn(List.of(testCheckpoint));
+
+        ShipmentDetailDto result = shipmentService.getShipment(
+                testShipmentId,
+                "user-abc",
+                "company-abc",
+                false
+        );
+
+        assertNotNull(result);
+        assertEquals(testShipmentId, result.id());
+    }
+
+    @Test
+    void getShipment_whenAdminRequests_shouldReturnShipment() {
+        when(shipmentRepository.findById(testShipmentId)).thenReturn(Optional.of(testShipment));
+        when(checkpointRepository.findByShipmentIdOrderByTimestampAsc(testShipmentId)).thenReturn(List.of(testCheckpoint));
+
+        ShipmentDetailDto result = shipmentService.getShipment(
+                testShipmentId,
+                "any-user",
+                "any-company",
+                true
+        );
+
+        assertNotNull(result);
+        assertEquals(testShipmentId, result.id());
+    }
+
+    @Test
+    void getShipment_whenUnauthorizedUserRequests_shouldThrowAccessDenied() {
+        when(shipmentRepository.findById(testShipmentId)).thenReturn(Optional.of(testShipment));
+
+        assertThrows(
+                GlobalExceptionHandler.AccessDeniedException.class,
+                () -> shipmentService.getShipment(
+                        testShipmentId,
+                        "unauth-user",
+                        "different-company",
+                        false
+                )
+        );
+    }
+
+    @Test
+    void getShipment_whenNotFound_shouldThrowNotFoundException() {
+        UUID nonExistentId = UUID.randomUUID();
+        when(shipmentRepository.findById(nonExistentId)).thenReturn(Optional.empty());
+
+        assertThrows(
+                GlobalExceptionHandler.ShipmentNotFoundException.class,
+                () -> shipmentService.getShipment(
+                        nonExistentId,
+                        "user-123",
+                        "company-abc",
+                        false
+                )
+        );
+    }
+
+    @Test
+    void listForUser_shouldReturnUserShipments() {
+        Shipment shipment2 = Shipment.builder()
+                .id(UUID.randomUUID())
+                .ownerUserId("user-123")
+                .companyId("company-abc")
+                .sender("Sender 2")
+                .receiver("Receiver 2")
+                .currentStatus("IN TRANSIT")
+                .createdAt(Instant.now())
+                .build();
+
+        when(shipmentRepository.findByOwnerUserId("user-123")).thenReturn(List.of(testShipment, shipment2));
+
+        List<ShipmentListItemDto> result = shipmentService.listForUser("user-123");
+
+        assertEquals(2, result.size());
+        assertEquals("Test Sender", result.get(0).sender());
+        assertEquals("Sender 2", result.get(1).sender());
+        verify(shipmentRepository, times(1)).findByOwnerUserId("user-123");
+    }
+
+    @Test
+    void listForUser_whenNoShipments_shouldReturnEmptyList() {
+        when(shipmentRepository.findByOwnerUserId("user-123")).thenReturn(List.of());
+
+        List<ShipmentListItemDto> result = shipmentService.listForUser("user-123");
+
+        assertTrue(result.isEmpty());
     }
 }
