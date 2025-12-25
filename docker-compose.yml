@@ -15,25 +15,29 @@ services:
       retries: 5
 
   pubsub-init:
-    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:slim
+    image: curlimages/curl:latest
     depends_on:
-      - pubsub-emulator
-    environment:
-      - PUBSUB_PROJECT_ID=local-project
-      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
-    entrypoint: ["/bin/sh","-c"]
-    command: >
-      gcloud config set project $PUBSUB_PROJECT_ID &&
-      gcloud --quiet beta emulators pubsub env-init &&
-      python - <<'PY'
-      import os
-      from google.cloud import pubsub_v1
-      project=os.environ["PUBSUB_PROJECT_ID"]
-      publisher=pubsub_v1.PublisherClient()
-      topic_path=publisher.topic_path(project,"tracking-updates")
-      try:
-        publisher.create_topic(request={"name": topic_path})
-        print("created topic", topic_path)
-      except Exception as e:
-        print("topic exists?", e)
-      PY
+      pubsub-emulator:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting for Pub/Sub emulator to be ready..."
+        sleep 5
+        
+        echo "Creating topic: tracking-updates"
+        curl -s -X PUT "http://pubsub-emulator:8085/v1/projects/local-project/topics/tracking-updates"
+        
+        echo ""
+        echo "Creating subscription: tracking-updates-sub"
+        curl -s -X PUT "http://pubsub-emulator:8085/v1/projects/local-project/subscriptions/tracking-updates-sub" \
+          -H "Content-Type: application/json" \
+          -d '{"topic": "projects/local-project/topics/tracking-updates"}'
+        
+        echo ""
+        echo "Verifying topic exists..."
+        curl -s "http://pubsub-emulator:8085/v1/projects/local-project/topics"
+        
+        echo ""
+        echo "Setup complete!"

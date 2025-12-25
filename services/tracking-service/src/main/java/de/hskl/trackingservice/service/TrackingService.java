@@ -15,8 +15,8 @@ public class TrackingService {
     private final PubSubPublisherService pubSubPublisher;
 
     public void processTrackingUpdate(TrackingUpdateDto dto) {
-        //log.info("Processing tracking update for shipment: {}", dto.shipmentId());
-        System.out.println("Processing tracking update for shipment: " + dto.shipmentId());
+        log.info("Processing tracking update for shipment: {}", dto.shipmentId());
+        //System.out.println("Processing tracking update for shipment: " + dto.shipmentId());
 
         if (dto.shipmentId() == null) {
             throw new IllegalArgumentException("Shipment ID is required");
@@ -33,7 +33,7 @@ public class TrackingService {
 
         pubSubPublisher.publishTrackingUpdate(event);
 
-        //log.info("Successfully processed tracking update for shipment: {}", dto.shipmentId());
-        System.out.println("Successfully processed tracking update for shipment: " + dto.shipmentId());
+        log.info("Successfully processed tracking update for shipment: {}", dto.shipmentId());
+        //System.out.println("Successfully processed tracking update for shipment: " + dto.shipmentId());
     }
 }

@@ -16,9 +16,9 @@ public class TrackingController {
 
     @PostMapping("/update")
     public ResponseEntity<String> updateTracking(@RequestBody TrackingUpdateDto dto) {
-        //log.info("Received tracking update for shipment: {}", dto.shipmentId());
+        log.info("Received tracking update for shipment: {}", dto.shipmentId());
 
-        System.out.println("Received tracking update for shipment: " + dto.shipmentId());
+        //System.out.println("Received tracking update for shipment: " + dto.shipmentId());
 
         trackingService.processTrackingUpdate(dto);
 
