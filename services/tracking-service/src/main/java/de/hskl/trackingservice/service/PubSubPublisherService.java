@@ -18,15 +18,13 @@ public class PubSubPublisherService {
     @Value("${pubsub.topic.tracking-updates}")
     private String topicName;
 
-    public void  publishTrackingUpdate(TrackingEvent event) {
+    public void publishTrackingUpdate(TrackingEvent event) {
         try {
             String json = objectMapper.writeValueAsString(event);
             pubSubTemplate.publish(topicName, json);
             log.info("Published tracking update for shipment: {}", event.getShipmentId());
-            //System.out.println("Published tracking update for shipment: " + event.getShipmentId());
         } catch (Exception e) {
             log.error("Error serializing tracking event", e);
-            //System.out.println("Error serializing tracking event: " + e);
         }
     }
 }

@@ -1,25 +1,26 @@
 package de.hskl.shipmentservice.service;
 
-import de.hskl.shipmentservice.dto.CheckpointDto;
-import de.hskl.shipmentservice.dto.CreateShipmentDto;
-import de.hskl.shipmentservice.dto.ShipmentDetailDto;
-import de.hskl.shipmentservice.dto.ShipmentListItemDto;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import de.hskl.shipmentservice.dto.*;
 import de.hskl.shipmentservice.entity.Checkpoint;
 import de.hskl.shipmentservice.entity.Shipment;
+import de.hskl.shipmentservice.entity.TrackingUpdate;
 import de.hskl.shipmentservice.exceptions.GlobalExceptionHandler;
 import de.hskl.shipmentservice.repository.CheckpointRepository;
 import de.hskl.shipmentservice.repository.ShipmentRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ShipmentService {
@@ -79,5 +80,34 @@ public class ShipmentService {
                 .map(CheckpointDto::from).toList();
 
         return ShipmentDetailDto.from(shipment, timeline);
+    }
+
+    public void updateShipment(String payload) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        TrackingUpdate trackingUpdate = mapper.readValue(payload, TrackingUpdate.class);
+
+        log.info("Tracking Update: {}", trackingUpdate);
+
+        Shipment shipment = shipmentRepository.findById(trackingUpdate.getShipmentId())
+                .orElseThrow(() -> new EntityNotFoundException("Shipment not found: " + trackingUpdate.getShipmentId()));
+
+        shipment.setCurrentStatus(trackingUpdate.getStatus());
+        shipment.setLastLat(trackingUpdate.getLat());
+        shipment.setLastLng(trackingUpdate.getLng());
+        shipment.setUpdatedAt(Instant.now());
+        shipmentRepository.save(shipment);
+
+        Checkpoint checkpoint = Checkpoint.builder()
+                .shipment(shipment)
+                .timestamp(trackingUpdate.getTimestamp())
+                .status(trackingUpdate.getStatus())
+                .message(trackingUpdate.getMessage())
+                .lat(trackingUpdate.getLat())
+                .lng(trackingUpdate.getLng())
+                .build();
+
+        log.info("Checkpoint {}", checkpoint);
+        checkpointRepository.save(checkpoint);
     }
 }
