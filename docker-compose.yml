@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: supplychain
+      POSTGRES_PASSWORD: supplychain
+      POSTGRES_DB: supplychain
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U supplychain" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  pubsub-emulator:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
+    ports:
+      - "8085:8085"
+    environment:
+      - PUBSUB_PROJECT_ID=local-project
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pubsub-init:
+    image: curlimages/curl:latest
+    depends_on:
+      pubsub-emulator:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting for Pub/Sub emulator to be ready..."
+        sleep 5
+        
+        echo "Creating topic: tracking-updates"
+        curl -s -X PUT "http://pubsub-emulator:8085/v1/projects/local-project/topics/tracking-updates"
+        
+        echo ""
+        echo "Creating subscription: tracking-updates-sub"
+        curl -s -X PUT "http://pubsub-emulator:8085/v1/projects/local-project/subscriptions/tracking-updates-sub" \
+          -H "Content-Type: application/json" \
+          -d '{"topic": "projects/local-project/topics/tracking-updates"}'
+        
+        echo ""
+        echo "Verifying topic exists..."
+        curl -s "http://pubsub-emulator:8085/v1/projects/local-project/topics"
+        
+        echo ""
+        echo "Setup complete!"
+
+volumes:
+  postgres_data:

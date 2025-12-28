@@ -68,8 +68,8 @@ public class ShipmentControllerTest {
         when(shipmentService.createShipment(any(CreateShipmentDto.class), anyString(), anyString())).thenReturn(testDetailDto);
 
         mockMvc.perform(post("/create")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(testCreateDto)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(testCreateDto)))
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
                 .andExpect(jsonPath("$.id").value(testShipmentId.toString()))

@@ -1,14 +1,14 @@
-name: shipment-service-ci.yml
+name: tracking-service-ci.yml
 on:
   push:
     branches: [main, develop]
     paths:
-      - 'services/shipment-service/**'
-      - '.github/workflows/shipment-service-ci.yml'
+      - 'services/tracking-service/**'
+      - '.github/workflows/tracking-service-ci.yml'
   pull_request:
     branches: [main, develop]
     paths:
-      - 'services/shipment-service/**'
+      - 'services/tracking-service/**'
 
 jobs:
   build-and-test:
@@ -26,15 +26,16 @@ jobs:
           cache: 'maven'
 
       - name: Build with Maven
-        working-directory: ./services/shipment-service
+        working-directory: ./services/tracking-service
         run: mvn clean compile
 
       - name: Unit Tests
-        working-directory: ./services/shipment-service
+        working-directory: ./services/tracking-service
         run: mvn test
         env:
           SPRING_CLOUD_GCP_PUBSUB_ENABLED: false
 
       - name: Package Application
-        working-directory: ./services/shipment-service
+        working-directory: ./services/tracking-service
         run: mvn package -DskipTests
+
