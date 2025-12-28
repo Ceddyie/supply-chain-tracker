@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/tracking")
 @RequiredArgsConstructor
 @Slf4j
 public class TrackingController {

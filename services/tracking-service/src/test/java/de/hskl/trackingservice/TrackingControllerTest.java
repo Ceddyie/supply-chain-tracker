@@ -41,7 +41,7 @@ public class TrackingControllerTest {
 
         doNothing().when(trackingService).processTrackingUpdate(any());
 
-        mockMvc.perform(post("/tracking/update")
+        mockMvc.perform(post("/update")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -52,7 +52,7 @@ public class TrackingControllerTest {
 
     @Test
     void health_shouldReturnOk() throws Exception {
-        mockMvc.perform(get("/tracking/health"))
+        mockMvc.perform(get("/health"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Tracking Service is running"));
     }
