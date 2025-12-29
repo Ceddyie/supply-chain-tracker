@@ -17,6 +17,12 @@ public class GlobalExceptionHandler {
                 .body(ex.getMessage());
     }
 
+    @ExceptionHandler(TrackingNotFoundException.class)
+    public ResponseEntity handleTrackingNotFound(TrackingNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity handleAccess(AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -26,6 +32,12 @@ public class GlobalExceptionHandler {
     public static class ShipmentNotFoundException extends RuntimeException {
         public ShipmentNotFoundException(UUID id) {
             super("Shipment with id " + id + " not found");
+        }
+    }
+
+    public static class TrackingNotFoundException extends RuntimeException {
+        public TrackingNotFoundException(String trackingId) {
+            super("Shipment with Tracking-ID " + trackingId + " not found");
         }
     }
 

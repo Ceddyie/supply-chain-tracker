@@ -3,6 +3,7 @@ package de.hskl.shipmentservice.controller;
 import de.hskl.shipmentservice.dto.CreateShipmentDto;
 import de.hskl.shipmentservice.dto.ShipmentDetailDto;
 import de.hskl.shipmentservice.dto.ShipmentListItemDto;
+import de.hskl.shipmentservice.dto.ShipmentTrackingDto;
 import de.hskl.shipmentservice.service.ShipmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,12 @@ public class ShipmentController {
     @GetMapping("/{id}")
     public ResponseEntity<ShipmentDetailDto> get(@PathVariable UUID id) {
         ShipmentDetailDto dto = shipmentService.getShipment(id, mockUserId(), mockCompanyId(), mockIsAdmin());
+        return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/track/{trackingId}")
+    public ResponseEntity<ShipmentTrackingDto> getTracking(@PathVariable String trackingId) {
+        ShipmentTrackingDto dto = shipmentService.getTrackingInfo(trackingId);
         return ResponseEntity.ok(dto);
     }
 

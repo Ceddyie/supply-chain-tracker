@@ -53,6 +53,7 @@ public class ShipmentControllerTest {
 
         testDetailDto = new ShipmentDetailDto(
                 testShipmentId,
+                "PKG-1234ABCD",
                 "Test Sender",
                 "Test Receiver",
                 "CREATED",

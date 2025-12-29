@@ -18,6 +18,9 @@ public class Shipment {
     @Column(name = "id", nullable = false)
     private UUID id;
 
+    @Column
+    private String trackingId;
+
     @Column(name = "owner_user_id", length = 64)
     private String ownerUserId;
 

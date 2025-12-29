@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -27,10 +28,16 @@ public class ShipmentService {
     private final ShipmentRepository shipmentRepository;
     private final CheckpointRepository checkpointRepository;
 
+    private static final String CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final SecureRandom random = new SecureRandom();
+
     @Transactional
     public ShipmentDetailDto createShipment(CreateShipmentDto dto, String ownerUserId, String companyId) {
         var now = Instant.now();
+        String trackingId = generateTrackingId();
+
         Shipment shipment = Shipment.builder()
+                .trackingId(trackingId)
                 .ownerUserId(ownerUserId)
                 .companyId(companyId)
                 .sender(dto.sender())
@@ -53,6 +60,14 @@ public class ShipmentService {
         checkpointRepository.save(checkpoint);
 
         return mapDetail(shipment, List.of(checkpoint));
+    }
+
+    private String generateTrackingId() {
+        StringBuilder sb = new StringBuilder("PKG-");
+        for (int i = 0; i < 8; i++) {
+            sb.append(CHARS.charAt(random.nextInt(CHARS.length())));
+        }
+        return sb.toString();
     }
 
     @Transactional(readOnly = true)
@@ -109,5 +124,19 @@ public class ShipmentService {
 
         log.info("Checkpoint {}", checkpoint);
         checkpointRepository.save(checkpoint);
+    }
+
+    public ShipmentTrackingDto getTrackingInfo(String trackingId) {
+        Shipment shipment = shipmentRepository.findByTrackingId(trackingId);
+        if (shipment == null) {
+            throw new GlobalExceptionHandler.TrackingNotFoundException(trackingId);
+        }
+        var checkpoints = checkpointRepository.findByShipmentIdOrderByTimestampAsc(shipment.getId());
+        return trackingMap(shipment, checkpoints);
+    }
+
+    private ShipmentTrackingDto trackingMap(Shipment shipment, List<Checkpoint> checkpoints) {
+        var timeline = checkpoints.stream().map(CheckpointTrackingDto::from).toList();
+        return ShipmentTrackingDto.from(shipment, timeline);
     }
 }
