@@ -1,5 +1,6 @@
 CREATE TABLE shipments (
     id uuid PRIMARY KEY,
+    tracking_id VARCHAR(64),
     owner_user_id VARCHAR(64),
     company_id VARCHAR(64),
     sender VARCHAR(255) NOT NULL,

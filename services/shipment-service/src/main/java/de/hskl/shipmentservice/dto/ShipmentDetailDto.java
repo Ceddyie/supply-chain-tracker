@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public record ShipmentDetailDto(
         UUID id,
+        String trackingId,
         String sender,
         String receiver,
         String currentStatus,
@@ -19,6 +20,7 @@ public record ShipmentDetailDto(
     public static ShipmentDetailDto from(Shipment shipment, List<CheckpointDto> checkpoints) {
         return new ShipmentDetailDto(
                 shipment.getId(),
+                shipment.getTrackingId(),
                 shipment.getSender(),
                 shipment.getReceiver(),
                 shipment.getCurrentStatus(),
