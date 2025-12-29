@@ -61,6 +61,7 @@ public class ShipmentServiceTest {
 
         testShipment = Shipment.builder()
                 .id(testShipmentId)
+                .trackingId("PKG-1234ABCD")
                 .ownerUserId("user-123")
                 .companyId("company-abc")
                 .sender(testCreateDto.sender())
@@ -217,6 +218,7 @@ public class ShipmentServiceTest {
     void listForUser_shouldReturnUserShipments() {
         Shipment shipment2 = Shipment.builder()
                 .id(UUID.randomUUID())
+                .trackingId("PKG-ABCD1234")
                 .ownerUserId("user-123")
                 .companyId("company-abc")
                 .sender("Sender 2")
