@@ -1,10 +1,14 @@
 package de.hskl.apigateway.filter;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -31,26 +35,39 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        // Mock Auth
-        String userRole = exchange.getRequest().getHeaders().getFirst("X-User-Role");
-        String userId = exchange.getRequest().getHeaders().getFirst("X-User-Id");
+        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
-        if (userRole == null || userId == null) {
-            logger.warn("Missing auth headers for path: {}", path);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.warn("Missing or invalid Authorization header for path {}", path);
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
         }
 
-        // Rolle und User Id weitergeben
-        ServerWebExchange mutatedExchange = exchange.mutate()
-                .request(r -> r
-                        .header("X-Auth-User-Id", userId)
-                        .header("X-Auth-User-Role", userRole))
-                .build();
+        String token = authHeader.substring(7);
 
-        logger.debug("Authentication request: user={}, role={}", userId, userRole);
+        try {
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
+            String userId = decodedToken.getUid();
+            String email = decodedToken.getEmail();
 
-        return chain.filter(mutatedExchange);
+            // read Claims
+            Object roleClaim = decodedToken.getClaims().get("role");
+            String role = roleClaim != null ? roleClaim.toString() : "CUSTOMER";
+
+            // pass on Role & UserId
+            ServerWebExchange mutatedExchange = exchange.mutate()
+                    .request(r -> r
+                            .header("X-Auth-User-Id", userId)
+                            .header("X-Auth-User-Role", role))
+                    .build();
+
+            logger.debug("Authentication request: user={}, role={}", userId, role);
+            return chain.filter(mutatedExchange);
+        } catch (FirebaseAuthException e) {
+            logger.warn("Token verification failed: {}", e.getMessage());
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
     }
 
     private boolean isPublicPath(String path) {
