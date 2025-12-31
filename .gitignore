@@ -13,3 +13,6 @@ release.properties
 .DS_Store
 
 *.log
+
+node_modules/
+.gitignore
