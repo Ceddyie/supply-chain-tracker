@@ -41,6 +41,9 @@ public class ShipmentControllerTest {
     private ShipmentDetailDto testDetailDto;
     private UUID testShipmentId;
 
+    private static final String USER_ID_HEADER = "X-Auth-User-Id";
+    private static final String TEST_USER_ID = "test-user-123";
+
     @BeforeEach
     void setUp() {
         testShipmentId = UUID.randomUUID();
@@ -123,7 +126,9 @@ public class ShipmentControllerTest {
 
         when(shipmentService.listForUser(anyString())).thenReturn(List.of(item1, item2));
 
-        mockMvc.perform(get("/"))
+        mockMvc.perform(get("/")
+                        .header(USER_ID_HEADER, TEST_USER_ID)
+                )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].sender").value("Sender 1"))
                 .andExpect(jsonPath("$[1].sender").value("Sender 2"));
@@ -133,7 +138,9 @@ public class ShipmentControllerTest {
     void listShipments_whenEmpty_shouldReturnEmptyArray() throws Exception {
         when(shipmentService.listForUser(anyString())).thenReturn(List.of());
 
-        mockMvc.perform(get("/"))
+        mockMvc.perform(get("/")
+                        .header(USER_ID_HEADER, TEST_USER_ID)
+                )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$").isEmpty());
