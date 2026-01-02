@@ -40,9 +40,9 @@ export default function Dashboard() {
             const shipments = response.data;
             setStats({
                 total: shipments.length,
-                inTransit: shipments.filter((s: any) => s.status === "IN_TRANSIT").length,
-                delivered: shipments.filter((s: any) => s.status === "DELIVERED").length,
-                pending: shipments.filter((s: any) => s.status === "CREATED").length,
+                inTransit: shipments.filter((s: any) => s.currentStatus === "IN_TRANSIT").length,
+                delivered: shipments.filter((s: any) => s.currentStatus === "DELIVERED").length,
+                pending: shipments.filter((s: any) => s.currentStatus === "CREATED").length,
             });
         } catch (error) {
             console.error("Failed to load stats", error);
