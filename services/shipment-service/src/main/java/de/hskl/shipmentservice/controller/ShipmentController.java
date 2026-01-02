@@ -13,6 +13,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping
 @RequiredArgsConstructor
@@ -45,7 +46,10 @@ public class ShipmentController {
     }
 
     @GetMapping
-    public List<ShipmentListItemDto> listMine() {
-        return shipmentService.listForUser(mockUserId());
+    public List<ShipmentListItemDto> listMine(
+            @RequestHeader("X-Auth-User-Id") String userId,
+            @RequestHeader(value = "X-Auth-User-Role", defaultValue = "CUSTOMER") String role
+    ) {
+        return shipmentService.listForUser(userId);
     }
 }

@@ -30,14 +30,16 @@ services:
 
   firebase-emulator:
     image: andreysenov/firebase-tools
-    command: firebase emulators:start --only auth --project local-project
+    command: firebase emulators:start --only auth,functions --project local-project
     ports:
       - "9099:9099"
       - "4000:4000"
+      - "5001:5001"
     volumes:
-      - ./firebase.json:/home/node/firebase.json
+      - ./:/home/node
+    working_dir: /home/node
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9099"]
+      test: ["CMD", "curl", "-f", "http://localhost:9099", "http://localhost:5001"]
       interval: 10s
       timeout: 5s
       retries: 5

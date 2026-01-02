@@ -1,19 +1,11 @@
 import './App.css'
-import {AuthProvider /*, useAuth*/} from "./context/AuthContext.tsx";
-//import * as React from "react";
-import {BrowserRouter, /*Navigate,*/ Route, Routes} from "react-router-dom";
+import {AuthProvider} from "./context/AuthContext.tsx";
+import {BrowserRouter, Navigate, Route, Routes} from "react-router-dom";
 import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
-
-/*function PrivateRoute({ children }: { children: React.ReactNode }) {
-    const { user, loading } = useAuth();
-
-    if (loading) {
-        return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-    }
-
-    return user ? <>{children}</> : <Navigate to="/login" />;
-}*/
+import PrivateRoute from "./components/PrivateRoute.tsx";
+import Layout from "./components/Layout.tsx";
+import Dashboard from "./pages/Dashboard.tsx";
 
 function App() {
   return (
@@ -22,8 +14,17 @@ function App() {
             <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                {/*<Route path="/track/:trackingId" element={<TrackingView />} />
+                <Route path="/track" element={<TrackingView />} />*/}
 
-                {/*<Route path="/" element={<PrivateRoute></PrivateRoute>}*/}
+                <Route path="/" element={<PrivateRoute><Layout children={<Dashboard />}/></PrivateRoute>}>
+                    <Route index element={<Navigate to="/dashboard" />} />
+                    <Route path="dashboard" element={<Dashboard />} />
+                    {/*<Route path="shipments/new" element={<CreateShipment />} />
+                    <Route path="shipments" element={<MyShipments />} />
+                    <Route path="station" element={<StationUpdate />} />*/}
+                </Route>
+
             </Routes>
         </BrowserRouter>
     </AuthProvider>

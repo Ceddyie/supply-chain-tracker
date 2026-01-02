@@ -5,6 +5,7 @@ import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -18,6 +19,9 @@ import java.util.List;
 
 @Component
 public class AuthenticationFilter implements GlobalFilter, Ordered {
+
+    @Value("${firebase.emulator.enabled}")
+    private boolean emulatorEnabled;
 
     private static Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
 
@@ -46,7 +50,13 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         String token = authHeader.substring(7);
 
         try {
-            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
+            FirebaseToken decodedToken;
+            if (emulatorEnabled) {
+                decodedToken = FirebaseAuth.getInstance().verifyIdToken(token, false);
+            } else {
+                decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
+            }
+
             String userId = decodedToken.getUid();
             String email = decodedToken.getEmail();
 
