@@ -109,7 +109,7 @@ export default function Login() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="group w-full rounded-xl bg-indigo-500 px-4 py-3 font-medium text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400 disabled:opacity-60 disabled:hover:bg-indigo-500"
+                                className="group w-full rounded-xl bg-indigo-500 px-4 py-3 font-medium text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400 disabled:opacity-60 disabled:hover:bg-indigo-500 cursor-pointer"
                             >
                 <span className="flex items-center justify-center gap-2">
                   {loading && (
@@ -130,7 +130,7 @@ export default function Login() {
                             Not yet registered?{" "}
                             <Link
                                 to="/register"
-                                className="font-medium text-indigo-300 hover:text-indigo-200 transition"
+                                className="font-medium text-indigo-300 hover:text-indigo-200 transition cursor-pointer"
                             >
                                 Create an account
                             </Link>
