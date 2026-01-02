@@ -15,7 +15,7 @@ api.interceptors.request.use(async (config) => {
 });
 
 export const shipmentService = {
-    create: (data: { sender: string; receiver: string; expectedDelivery: string }) =>
+    create: (data: { sender: string; receiver: string; receiverStreet: string, receiverCity: string; expectedDelivery: string }) =>
         api.post('/shipment/create', data),
 
     getById: (id: string) =>

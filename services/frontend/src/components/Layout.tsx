@@ -1,11 +1,7 @@
-import * as React from 'react';
 import Navbar from "./Navbar.tsx";
+import { Outlet } from "react-router-dom";
 
-type Props = {
-    children: React.ReactNode;
-};
-
-export default function Layout({ children }: Props) {
+export default function Layout() {
     return (
         <div className="min-h-screen w-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -18,7 +14,7 @@ export default function Layout({ children }: Props) {
 
                 <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-6 sm:py-8">
                     <div className="rounded-2xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-xl">
-                        <div className="p-4 sm:p-6">{children}</div>
+                        <div className="p-4 sm:p-6"><Outlet /></div>
                     </div>
                 </main>
 
