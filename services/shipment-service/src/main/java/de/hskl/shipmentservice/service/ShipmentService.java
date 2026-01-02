@@ -32,16 +32,17 @@ public class ShipmentService {
     private static final SecureRandom random = new SecureRandom();
 
     @Transactional
-    public ShipmentDetailDto createShipment(CreateShipmentDto dto, String ownerUserId, String companyId) {
+    public ShipmentDetailDto createShipment(CreateShipmentDto dto, String ownerUserId) {
         var now = Instant.now();
         String trackingId = generateTrackingId();
 
         Shipment shipment = Shipment.builder()
                 .trackingId(trackingId)
                 .ownerUserId(ownerUserId)
-                .companyId(companyId)
                 .sender(dto.sender())
                 .receiver(dto.receiver())
+                .receiverStreet(dto.receiverStreet())
+                .receiverCity(dto.receiverCity())
                 .currentStatus("CREATED")
                 .expectedDelivery(dto.expectedDelivery())
                 .createdAt(now)
@@ -71,13 +72,12 @@ public class ShipmentService {
     }
 
     @Transactional(readOnly = true)
-    public ShipmentDetailDto getShipment(UUID id, String requesterUserId, String requesterCompanyId, boolean isAdmin) {
+    public ShipmentDetailDto getShipment(UUID id, String requesterUserId, boolean isAdmin) {
         Shipment shipment = shipmentRepository.findById(id)
                 .orElseThrow(() -> new GlobalExceptionHandler.ShipmentNotFoundException(id));
 
         if (!isAdmin &&
-                !requesterUserId.equals(shipment.getOwnerUserId()) &&
-            !requesterCompanyId.equals(shipment.getCompanyId())) {
+                !requesterUserId.equals(shipment.getOwnerUserId())) {
             throw new GlobalExceptionHandler.AccessDeniedException("Forbidden");
         }
         var checkpoints = checkpointRepository.findByShipmentIdOrderByTimestampAsc(id);

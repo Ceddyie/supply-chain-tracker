@@ -8,7 +8,6 @@ import java.util.UUID;
 
 public interface ShipmentRepository extends JpaRepository<Shipment, UUID> {
     List<Shipment> findByOwnerUserId(String ownerUserId);
-    List<Shipment> findByCompanyId(String companyId);
 
     Shipment findByTrackingId(String trackingId);
 }

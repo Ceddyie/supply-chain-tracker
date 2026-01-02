@@ -192,7 +192,7 @@ export default function Register() {
                                     {loading && (
                                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"/>
                                     )}
-                                    {loading ? "Creating..." : isBusinessAccount ? "Crate Business Account" : "Create Account"}
+                                    {loading ? "Creating..." : isBusinessAccount ? "Create Business Account" : "Create Account"}
                                 </span>
                             </button>
                         </form>

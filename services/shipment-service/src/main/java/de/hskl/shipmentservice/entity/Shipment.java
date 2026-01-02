@@ -24,14 +24,17 @@ public class Shipment {
     @Column(name = "owner_user_id", length = 64)
     private String ownerUserId;
 
-    @Column(name = "company_id", length = 64)
-    private String companyId;
-
     @Column(name = "sender", nullable = false)
     private String sender;
 
     @Column(name = "receiver", nullable = false)
     private String receiver;
+
+    @Column(name = "receiver_street", nullable = false)
+    private String receiverStreet;
+
+    @Column(name = "receiver_city", nullable = false)
+    private String receiverCity;
 
     @Column(name = "current_status", nullable = false, length = 50)
     private String currentStatus;
