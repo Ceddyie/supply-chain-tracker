@@ -6,6 +6,7 @@ import Register from "./pages/Register.tsx";
 import PrivateRoute from "./components/PrivateRoute.tsx";
 import Layout from "./components/Layout.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
+import CreateShipment from "./pages/CreateShipment.tsx";
 
 function App() {
   return (
@@ -17,12 +18,15 @@ function App() {
                 {/*<Route path="/track/:trackingId" element={<TrackingView />} />
                 <Route path="/track" element={<TrackingView />} />*/}
 
-                <Route path="/" element={<PrivateRoute><Layout children={<Dashboard />}/></PrivateRoute>}>
-                    <Route index element={<Navigate to="/dashboard" />} />
-                    <Route path="dashboard" element={<Dashboard />} />
-                    {/*<Route path="shipments/new" element={<CreateShipment />} />
-                    <Route path="shipments" element={<MyShipments />} />
-                    <Route path="station" element={<StationUpdate />} />*/}
+                <Route element={<PrivateRoute/>}>
+                    <Route element={<Layout />}>
+                        <Route path="/" element={<Navigate to="/dashboard" replace />}/>
+                        <Route path="dashboard" element={<Dashboard />} />
+                        <Route path="shipments/new" element={<CreateShipment />} />
+                        {/*<Route path="shipments" element={<MyShipments />} />
+                        <Route path="station" element={<StationUpdate />} />*/}
+                    </Route>
+
                 </Route>
 
             </Routes>

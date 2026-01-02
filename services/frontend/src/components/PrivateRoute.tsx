@@ -1,13 +1,12 @@
-import { Navigate, } from "react-router-dom";
+import {Navigate, Outlet,} from "react-router-dom";
 import {useAuth} from "../context/AuthContext.tsx";
-import * as React from "react";
 
-type Props = {
+/*type Props = {
     redirectTo?: string;
     children?: React.ReactNode;
-};
+};*/
 
-export default function PrivateRoute ({ redirectTo = "/login", children }: Props) {
+export default function PrivateRoute () {
     const { user, loading } = useAuth() as any;
 
     if (loading) {
@@ -21,7 +20,5 @@ export default function PrivateRoute ({ redirectTo = "/login", children }: Props
         );
     }
 
-    if (!user) return <Navigate to={redirectTo} replace />;
-
-    return <>{children}</>;
+    return user ? <Outlet /> : <Navigate to="/login" replace />;
 }
