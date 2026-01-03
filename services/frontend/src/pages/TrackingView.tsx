@@ -3,6 +3,7 @@ import {shipmentService} from "../services/api.ts";
 import {useEffect, useState} from "react";
 import * as React from "react";
 import {TrackShipment} from "../components/TrackShipment.tsx";
+import {CurrentLocationMap} from "../components/CurrentLocationMap.tsx";
 
 type Shipment = {
     trackingId: string,
@@ -87,10 +88,12 @@ export default function TrackingView() {
         if (id) navigate(`/track/${id}`);
     };
 
+    const currentCpWithCoords = checkpoints.find((checkpoint) => checkpoint.lat !== undefined && checkpoint.lng !== undefined) ?? null;
+
     const TrackingDetails = () => (
         <div>
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-2">
-                <div className="rounded-xl border border-white/10 bg-white/5 p-2 text-center">
+                <div className={`rounded-xl border ${shipment?.status === "DELIVERED" ? "border-emerald-500/30 bg-emerald-500/10" : "border-white/10 bg-white/5"} p-2 text-center`}>
                     <p className="mt-1 text-sm text-white/60">Status</p>
                     <span className="text-xl">{shipment?.status.replaceAll("_", " ")}</span>
                 </div>
@@ -164,6 +167,17 @@ export default function TrackingView() {
                         </div>
                     )
                 })}
+                {currentCpWithCoords && shipment?.status !== "DELIVERED" ? (
+                    <CurrentLocationMap lat={currentCpWithCoords.lat!} lng={currentCpWithCoords.lng!} label={currentCpWithCoords.status.replaceAll("_", " ")} />
+                ) : shipment?.status !== "DELIVERED" ? (
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
+                        No location data available for this shipment
+                    </div>
+                ) :
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
+                        Package has arrived its destination
+                    </div>
+                }
             </div>
         </div>
     )
