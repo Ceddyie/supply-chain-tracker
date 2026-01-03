@@ -33,8 +33,8 @@ export const trackingService = {
         shipmentId: string;
         status: string;
         message: string;
-        lat: number;
-        lng: number;
+        lat: number | undefined;
+        lng: number | undefined;
         timestamp: string;
     }) => api.post('/tracking/update', data),
 };
