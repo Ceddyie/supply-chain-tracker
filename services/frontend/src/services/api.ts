@@ -15,17 +15,17 @@ api.interceptors.request.use(async (config) => {
 });
 
 export const shipmentService = {
-    create: (data: { sender: string; receiver: string; expectedDelivery: string }) =>
-        api.post('/shipments/create', data),
+    create: (data: { sender: string; receiver: string; receiverStreet: string, receiverCity: string; expectedDelivery: string }) =>
+        api.post('/shipment/create', data),
 
     getById: (id: string) =>
-        api.get(`/shipments/${id}`),
+        api.get(`/shipment/${id}`),
 
     getMyShipments: () =>
-        api.get(`/shipments`),
+        api.get(`/shipment`),
 
     trackPublic: (trackingId: string) =>
-        api.get(`/shipments/track/${trackingId}`),
+        api.get(`/shipment/track/${trackingId}`),
 };
 
 export const trackingService = {

@@ -13,6 +13,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping
 @RequiredArgsConstructor
@@ -25,16 +26,23 @@ public class ShipmentController {
     private boolean mockIsAdmin() { return false; }
 
     @PostMapping("/create")
-    public ResponseEntity<ShipmentDetailDto> create(@RequestBody CreateShipmentDto dto) {
-        ShipmentDetailDto created = shipmentService.createShipment(dto, mockUserId(), mockCompanyId());
+    public ResponseEntity<ShipmentDetailDto> create(
+            @RequestBody CreateShipmentDto dto,
+            @RequestHeader("X-Auth-User-Id") String userId
+            ) {
+        ShipmentDetailDto created = shipmentService.createShipment(dto, userId);
 
         URI location = URI.create("/" + created.id());
         return ResponseEntity.created(location).body(created); // Code 201 CREATED
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ShipmentDetailDto> get(@PathVariable UUID id) {
-        ShipmentDetailDto dto = shipmentService.getShipment(id, mockUserId(), mockCompanyId(), mockIsAdmin());
+    public ResponseEntity<ShipmentDetailDto> get(
+            @PathVariable UUID id,
+            @RequestHeader("X-Auth-User-Id") String userId,
+            @RequestHeader(value = "X-Auth-User-Role", defaultValue = "CUSTOMER") String role
+    ) {
+        ShipmentDetailDto dto = shipmentService.getShipment(id, userId, role.equals("ADMIN"));
         return ResponseEntity.ok(dto);
     }
 
@@ -45,7 +53,10 @@ public class ShipmentController {
     }
 
     @GetMapping
-    public List<ShipmentListItemDto> listMine() {
-        return shipmentService.listForUser(mockUserId());
+    public List<ShipmentListItemDto> listMine(
+            @RequestHeader("X-Auth-User-Id") String userId,
+            @RequestHeader(value = "X-Auth-User-Role", defaultValue = "CUSTOMER") String role
+    ) {
+        return shipmentService.listForUser(userId);
     }
 }

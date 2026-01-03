@@ -1,19 +1,14 @@
 import './App.css'
-import {AuthProvider /*, useAuth*/} from "./context/AuthContext.tsx";
-//import * as React from "react";
-import {BrowserRouter, /*Navigate,*/ Route, Routes} from "react-router-dom";
+import {AuthProvider} from "./context/AuthContext.tsx";
+import {BrowserRouter, Navigate, Route, Routes} from "react-router-dom";
 import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
-
-/*function PrivateRoute({ children }: { children: React.ReactNode }) {
-    const { user, loading } = useAuth();
-
-    if (loading) {
-        return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-    }
-
-    return user ? <>{children}</> : <Navigate to="/login" />;
-}*/
+import PrivateRoute from "./components/PrivateRoute.tsx";
+import Layout from "./components/Layout.tsx";
+import Dashboard from "./pages/Dashboard.tsx";
+import CreateShipment from "./pages/CreateShipment.tsx";
+import {Toaster} from "sonner";
+import TrackingView from "./pages/TrackingView.tsx";
 
 function App() {
   return (
@@ -22,10 +17,26 @@ function App() {
             <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route element={<Layout />}>
+                    <Route path="track" element={<TrackingView />} />
+                    <Route path="/track/:trackingId" element={<TrackingView />} />
+                </Route>
 
-                {/*<Route path="/" element={<PrivateRoute></PrivateRoute>}*/}
+                <Route element={<PrivateRoute/>}>
+                    <Route element={<Layout />}>
+                        <Route path="/" element={<Navigate to="/dashboard" replace />}/>
+                        <Route path="dashboard" element={<Dashboard />} />
+                        <Route path="shipments/new" element={<CreateShipment />} />
+                        {/*<Route path="shipments" element={<MyShipments />} />
+                        <Route path="station" element={<StationUpdate />} />*/}
+                    </Route>
+
+                </Route>
+
             </Routes>
         </BrowserRouter>
+
+        <Toaster richColors position="top-right" />
     </AuthProvider>
   );
 }

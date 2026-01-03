@@ -56,6 +56,8 @@ public class ShipmentServiceTest {
         testCreateDto = new CreateShipmentDto(
                 "Test Sender",
                 "Test Receiver",
+                "Musterstraße 1",
+                "Musterstadt",
                 Instant.now().plus(2, ChronoUnit.DAYS)
         );
 
@@ -63,7 +65,8 @@ public class ShipmentServiceTest {
                 .id(testShipmentId)
                 .trackingId("PKG-1234ABCD")
                 .ownerUserId("user-123")
-                .companyId("company-abc")
+                .receiverStreet(testCreateDto.receiverStreet())
+                .receiverCity(testCreateDto.receiverCity())
                 .sender(testCreateDto.sender())
                 .receiver(testCreateDto.receiver())
                 .currentStatus("CREATED")
@@ -86,7 +89,7 @@ public class ShipmentServiceTest {
         when(shipmentRepository.save(any(Shipment.class))).thenReturn(testShipment);
         when(checkpointRepository.save(any(Checkpoint.class))).thenReturn(testCheckpoint);
 
-        ShipmentDetailDto result = shipmentService.createShipment(testCreateDto, "user-123", "company-123");
+        ShipmentDetailDto result = shipmentService.createShipment(testCreateDto, "user-123");
 
         assertNotNull(result);
         assertEquals("Test Sender", result.sender());
@@ -103,14 +106,13 @@ public class ShipmentServiceTest {
         when(shipmentRepository.save(any(Shipment.class))).thenReturn(testShipment);
         when(checkpointRepository.save(any(Checkpoint.class))).thenReturn(testCheckpoint);
 
-        shipmentService.createShipment(testCreateDto, "user-123", "company-abc");
+        shipmentService.createShipment(testCreateDto, "user-123");
 
         ArgumentCaptor<Shipment> shipmentCaptor = ArgumentCaptor.forClass(Shipment.class);
         verify(shipmentRepository).save(shipmentCaptor.capture());
 
         Shipment savedShipment = shipmentCaptor.getValue();
         assertEquals("user-123", savedShipment.getOwnerUserId());
-        assertEquals("company-abc", savedShipment.getCompanyId());
         assertEquals("CREATED", savedShipment.getCurrentStatus());
         assertNotNull(savedShipment.getCreatedAt());
         assertNotNull(savedShipment.getUpdatedAt());
@@ -121,7 +123,7 @@ public class ShipmentServiceTest {
         when(shipmentRepository.save(any(Shipment.class))).thenReturn(testShipment);
         when(checkpointRepository.save(any(Checkpoint.class))).thenReturn(testCheckpoint);
 
-        shipmentService.createShipment(testCreateDto, "user-123", "company-abc");
+        shipmentService.createShipment(testCreateDto, "user-123");
 
         ArgumentCaptor<Checkpoint> checkpointCaptor = ArgumentCaptor.forClass(Checkpoint.class);
         verify(checkpointRepository).save(checkpointCaptor.capture());
@@ -140,7 +142,6 @@ public class ShipmentServiceTest {
         ShipmentDetailDto result = shipmentService.getShipment(
                 testShipmentId,
                 "user-123",
-                "company-abc",
                 false
         );
 
@@ -152,22 +153,6 @@ public class ShipmentServiceTest {
     }
 
     @Test
-    void getShipment_whenCompanyMemberRequests_shouldReturnShipment() {
-        when(shipmentRepository.findById(testShipmentId)).thenReturn(Optional.of(testShipment));
-        when(checkpointRepository.findByShipmentIdOrderByTimestampAsc(testShipmentId)).thenReturn(List.of(testCheckpoint));
-
-        ShipmentDetailDto result = shipmentService.getShipment(
-                testShipmentId,
-                "user-abc",
-                "company-abc",
-                false
-        );
-
-        assertNotNull(result);
-        assertEquals(testShipmentId, result.id());
-    }
-
-    @Test
     void getShipment_whenAdminRequests_shouldReturnShipment() {
         when(shipmentRepository.findById(testShipmentId)).thenReturn(Optional.of(testShipment));
         when(checkpointRepository.findByShipmentIdOrderByTimestampAsc(testShipmentId)).thenReturn(List.of(testCheckpoint));
@@ -175,7 +160,6 @@ public class ShipmentServiceTest {
         ShipmentDetailDto result = shipmentService.getShipment(
                 testShipmentId,
                 "any-user",
-                "any-company",
                 true
         );
 
@@ -192,7 +176,6 @@ public class ShipmentServiceTest {
                 () -> shipmentService.getShipment(
                         testShipmentId,
                         "unauth-user",
-                        "different-company",
                         false
                 )
         );
@@ -208,7 +191,6 @@ public class ShipmentServiceTest {
                 () -> shipmentService.getShipment(
                         nonExistentId,
                         "user-123",
-                        "company-abc",
                         false
                 )
         );
@@ -220,9 +202,10 @@ public class ShipmentServiceTest {
                 .id(UUID.randomUUID())
                 .trackingId("PKG-ABCD1234")
                 .ownerUserId("user-123")
-                .companyId("company-abc")
                 .sender("Sender 2")
                 .receiver("Receiver 2")
+                .receiverStreet("Receiver Street")
+                .receiverCity("Receiver City")
                 .currentStatus("IN TRANSIT")
                 .createdAt(Instant.now())
                 .build();

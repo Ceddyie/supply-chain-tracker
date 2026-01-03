@@ -41,6 +41,12 @@ public class ShipmentControllerTest {
     private ShipmentDetailDto testDetailDto;
     private UUID testShipmentId;
 
+    private static final String USER_ID_HEADER = "X-Auth-User-Id";
+    private static final String USER_ROLE_HEADER = "X-Auth-User-Role";
+
+    private static final String TEST_USER_ID = "test-user-123";
+    private static final String TEST_ROLE = "SENDER";
+
     @BeforeEach
     void setUp() {
         testShipmentId = UUID.randomUUID();
@@ -48,6 +54,8 @@ public class ShipmentControllerTest {
         testCreateDto = new CreateShipmentDto(
                 "Test Sender",
                 "Test Receiver",
+                "Musterstraße 1",
+                "Musterstadt",
                 Instant.now().plus(2, ChronoUnit.DAYS)
         );
 
@@ -56,6 +64,8 @@ public class ShipmentControllerTest {
                 "PKG-1234ABCD",
                 "Test Sender",
                 "Test Receiver",
+                "Musterstraße 1",
+                "Musterstadt",
                 "CREATED",
                 testCreateDto.expectedDelivery(),
                 null,
@@ -66,9 +76,11 @@ public class ShipmentControllerTest {
 
     @Test
     void createShipment_shouldReturnCreated() throws Exception {
-        when(shipmentService.createShipment(any(CreateShipmentDto.class), anyString(), anyString())).thenReturn(testDetailDto);
+        when(shipmentService.createShipment(any(CreateShipmentDto.class), anyString())).thenReturn(testDetailDto);
 
         mockMvc.perform(post("/create")
+                        .header(USER_ID_HEADER, TEST_USER_ID)
+                        .header(USER_ROLE_HEADER, TEST_ROLE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(testCreateDto)))
                 .andExpect(status().isCreated())
@@ -81,9 +93,12 @@ public class ShipmentControllerTest {
 
     @Test
     void getShipment_whenExists_shouldReturnOk() throws Exception {
-        when(shipmentService.getShipment(eq(testShipmentId), anyString(), anyString(), anyBoolean())).thenReturn(testDetailDto);
+        when(shipmentService.getShipment(eq(testShipmentId), anyString(), anyBoolean())).thenReturn(testDetailDto);
 
-        mockMvc.perform(get("/" + testShipmentId))
+        mockMvc.perform(get("/" + testShipmentId)
+                        .header(USER_ID_HEADER, TEST_USER_ID)
+                        .header(USER_ROLE_HEADER, TEST_ROLE)
+                )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(testShipmentId.toString()))
                 .andExpect(jsonPath("$.sender").value("Test Sender"));
@@ -92,16 +107,24 @@ public class ShipmentControllerTest {
     @Test
     void getShipment_whenNotFound_shouldReturn404() throws Exception {
         UUID nonExistentId = UUID.randomUUID();
-        when(shipmentService.getShipment(eq(nonExistentId), anyString(), anyString(), anyBoolean())).thenThrow(new GlobalExceptionHandler.ShipmentNotFoundException(nonExistentId));
+        when(shipmentService.getShipment(eq(nonExistentId), anyString(), anyBoolean())).thenThrow(new GlobalExceptionHandler.ShipmentNotFoundException(nonExistentId));
 
-        mockMvc.perform(get("/" + nonExistentId)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/" + nonExistentId)
+                        .header(USER_ID_HEADER, TEST_USER_ID)
+                        .header(USER_ROLE_HEADER, TEST_ROLE)
+                )
+                .andExpect(status().isNotFound());
     }
 
     @Test
     void getShipment_whenUnauthorized_shouldReturn403() throws Exception {
-        when(shipmentService.getShipment(eq(testShipmentId), anyString(), anyString(), anyBoolean())).thenThrow(new GlobalExceptionHandler.AccessDeniedException("Forbidden"));
+        when(shipmentService.getShipment(eq(testShipmentId), anyString(), anyBoolean())).thenThrow(new GlobalExceptionHandler.AccessDeniedException("Forbidden"));
 
-        mockMvc.perform(get("/" + testShipmentId)).andExpect(status().isForbidden());
+        mockMvc.perform(get("/" + testShipmentId)
+                        .header(USER_ID_HEADER, TEST_USER_ID)
+                        .header(USER_ROLE_HEADER, TEST_ROLE)
+                )
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -123,7 +146,9 @@ public class ShipmentControllerTest {
 
         when(shipmentService.listForUser(anyString())).thenReturn(List.of(item1, item2));
 
-        mockMvc.perform(get("/"))
+        mockMvc.perform(get("/")
+                        .header(USER_ID_HEADER, TEST_USER_ID)
+                )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].sender").value("Sender 1"))
                 .andExpect(jsonPath("$[1].sender").value("Sender 2"));
@@ -133,7 +158,9 @@ public class ShipmentControllerTest {
     void listShipments_whenEmpty_shouldReturnEmptyArray() throws Exception {
         when(shipmentService.listForUser(anyString())).thenReturn(List.of());
 
-        mockMvc.perform(get("/"))
+        mockMvc.perform(get("/")
+                        .header(USER_ID_HEADER, TEST_USER_ID)
+                )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$").isEmpty());

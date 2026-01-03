@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -37,6 +37,7 @@ public class FirebaseConfig {
                     System.setProperty("FIREBASE_AUTH_EMULATOR_HOST", emulatorHost);
                     options = FirebaseOptions.builder()
                             .setProjectId("local-project")
+                            .setCredentials(GoogleCredentials.newBuilder().build())
                             .build();
                     logger.info("Firebase initialized with emulator at {}", emulatorHost);
                 } else {
@@ -47,6 +48,8 @@ public class FirebaseConfig {
                             .build();
                     logger.info("Firebase initialized with service account");
                 }
+
+                FirebaseApp.initializeApp(options);
             } catch (IOException e) {
                 logger.error("Failed to initialize Firebase", e);
                 throw new RuntimeException("Firebase initialization failed", e);

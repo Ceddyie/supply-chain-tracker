@@ -10,6 +10,8 @@ export default function Register() {
     const [showPw, setShowPw] = useState(false);
     const [showPwConfirm, setShowPwConfirm] = useState(false);
 
+    const [isBusinessAccount, setIsBusinessAccount] = useState(false);
+
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -19,7 +21,7 @@ export default function Register() {
     const isPasswordValid = password.length >= 8;
     const doPasswordsMatch = password === passwordConfirm;
 
-    const canSubmit = isPasswordValid && doPasswordsMatch;
+    const canSubmit = isPasswordValid && doPasswordsMatch && email.length > 0;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,7 +29,8 @@ export default function Register() {
         setLoading(true);
 
         try {
-            await register(email, password);
+            const accountType = isBusinessAccount ? "SENDER" : "CUSTOMER";
+            await register(email, password, accountType);
             navigate('/dashboard');
         } catch (err: any) {
             setError(err.message || 'Registration failed');
@@ -92,7 +95,7 @@ export default function Register() {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••"
-                                        autoComplete="current-password"
+                                        autoComplete="new-password"
                                         required
                                         className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-16 text-white placeholder:text-white/30 outline-none transition focus:border-indigo-400/40 focus:bg-white/10 focus:shadow-[0_0_0_4px_rgba(99,102,241,0.15)]"
                                     />
@@ -113,11 +116,11 @@ export default function Register() {
                                 </label>
                                 <div className="mt-2 relative">
                                     <input
-                                        type={showPw ? "text" : "password"}
+                                        type={showPwConfirm ? "text" : "password"}
                                         value={passwordConfirm}
                                         onChange={(e) => setPasswordConfirm(e.target.value)}
                                         placeholder="••••••••"
-                                        autoComplete="current-password"
+                                        autoComplete="new-password"
                                         required
                                         minLength={8}
                                         className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-16 text-white placeholder:text-white/30 outline-none transition focus:border-indigo-400/40 focus:bg-white/10 focus:shadow-[0_0_0_4px_rgba(99,102,241,0.15)]"
@@ -152,17 +155,45 @@ export default function Register() {
                                 </div>
                             </div>
 
+                            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <div className="relative flex items-center justify-center pt-0.5">
+                                        <input
+                                            type="checkbox"
+                                            checked={isBusinessAccount}
+                                            onChange={(e) => setIsBusinessAccount(e.target.checked)}
+                                            className="peer sr-only"
+                                        />
+                                        <div className="h-5 w-5 rounded-md border border-white/20 bg-white/5 transition peer-checked:border-indigo-400 peer-checked:bg-indigo-500 peer-focus:ring-2 peer-focus:ring-indigo-400/20">
+                                            {isBusinessAccount && (
+                                                <svg className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="text-sm font-medium text-white">
+                                            Business Account
+                                        </div>
+                                        <p className="mt-0.5 text-xs text-white/50">
+                                            Enable this if you are a business or a seller who needs to create and manage shipments. Regular accounts can only track packages.
+                                        </p>
+                                    </div>
+                                </label>
+                            </div>
+
                             <button
                                 type="submit"
                                 disabled={!canSubmit || loading}
-                                className="group w-full rounded-xl bg-indigo-500 px-4 py-3 font-medium text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400 disabled:opacity-60 disabled:hover:bg-indigo-500"
+                                className="group w-full rounded-xl bg-indigo-500 px-4 py-3 font-medium text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400 disabled:opacity-60 disabled:hover:bg-indigo-500 cursor-pointer"
                             >
-                <span className="flex items-center justify-center gap-2">
-                  {loading && (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"/>
-                  )}
-                    {loading ? "Registering..." : "Register"}
-                </span>
+                                <span className="flex items-center justify-center gap-2">
+                                    {loading && (
+                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"/>
+                                    )}
+                                    {loading ? "Creating..." : isBusinessAccount ? "Create Business Account" : "Create Account"}
+                                </span>
                             </button>
                         </form>
 
@@ -176,7 +207,7 @@ export default function Register() {
                             Already registered?{" "}
                             <Link
                                 to="/login"
-                                className="font-medium text-indigo-300 hover:text-indigo-200 transition"
+                                className="font-medium text-indigo-300 hover:text-indigo-200 transition cursor-pointer"
                             >
                                 Login here
                             </Link>
