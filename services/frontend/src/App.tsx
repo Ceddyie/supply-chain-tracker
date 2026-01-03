@@ -7,6 +7,8 @@ import PrivateRoute from "./components/PrivateRoute.tsx";
 import Layout from "./components/Layout.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import CreateShipment from "./pages/CreateShipment.tsx";
+import {Toaster} from "sonner";
+import TrackingView from "./pages/TrackingView.tsx";
 
 function App() {
   return (
@@ -15,8 +17,10 @@ function App() {
             <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                {/*<Route path="/track/:trackingId" element={<TrackingView />} />
-                <Route path="/track" element={<TrackingView />} />*/}
+                <Route element={<Layout />}>
+                    <Route path="track" element={<TrackingView />} />
+                    <Route path="/track/:trackingId" element={<TrackingView />} />
+                </Route>
 
                 <Route element={<PrivateRoute/>}>
                     <Route element={<Layout />}>
@@ -31,6 +35,8 @@ function App() {
 
             </Routes>
         </BrowserRouter>
+
+        <Toaster richColors position="top-right" />
     </AuthProvider>
   );
 }

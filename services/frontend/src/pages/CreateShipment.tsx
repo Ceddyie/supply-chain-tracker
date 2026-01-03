@@ -3,6 +3,7 @@ import {useNavigate} from "react-router-dom";
 import {useEffect, useState} from "react";
 import * as React from "react";
 import {shipmentService} from "../services/api.ts";
+import {toast} from "sonner";
 
 type UserRole = "SENDER" | "STATION" | "CUSTOMER" | "ADMIN" | null;
 
@@ -26,9 +27,15 @@ export default function CreateShipment () {
 
         try {
             const expectedDeliveryInstant = new Date(`${expectedDelivery}T00:00:00Z`).toISOString();
-            await shipmentService.create({sender, receiver, receiverStreet, receiverCity, expectedDelivery: expectedDeliveryInstant});
-            alert("Successfully created");
-            //navigate("/shipments");
+            const res = await shipmentService.create({sender, receiver, receiverStreet, receiverCity, expectedDelivery: expectedDeliveryInstant});
+            console.log(res)
+            const trackingId = res.data.trackingId ?? res.data.trackingID;
+
+            toast.success("Shipment created", {
+                description: `Tracking ID: ${trackingId}`,
+            });
+
+            navigate("/dashboard");
         } catch (err: any) {
             setError(err.message || "Shipment creation failed");
         } finally {
