@@ -131,17 +131,21 @@ public class ShipmentControllerTest {
     void listShipments_shouldReturnList() throws Exception {
         ShipmentListItemDto item1 = new ShipmentListItemDto(
                 UUID.randomUUID(),
+                "PKG-1234ABCD",
                 "Sender 1",
                 "Receiver 1",
                 "CREATED",
-                Instant.now()
+                Instant.now(),
+                Instant.now().minus(2, ChronoUnit.DAYS)
         );
         ShipmentListItemDto item2 = new ShipmentListItemDto(
                 UUID.randomUUID(),
+                "PKG-ABCD1234",
                 "Sender 2",
                 "Receiver 2",
                 "IN_TRANSIT",
-                Instant.now()
+                Instant.now(),
+                Instant.now().minus(2, ChronoUnit.DAYS)
         );
 
         when(shipmentService.listForUser(anyString())).thenReturn(List.of(item1, item2));
