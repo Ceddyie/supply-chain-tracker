@@ -9,6 +9,8 @@ import Dashboard from "./pages/Dashboard.tsx";
 import CreateShipment from "./pages/CreateShipment.tsx";
 import {Toaster} from "sonner";
 import TrackingView from "./pages/TrackingView.tsx";
+import StationUpdate from "./pages/StationUpdate.tsx";
+import MyShipments from "./pages/MyShipments.tsx";
 
 function App() {
   return (
@@ -27,8 +29,8 @@ function App() {
                         <Route path="/" element={<Navigate to="/dashboard" replace />}/>
                         <Route path="dashboard" element={<Dashboard />} />
                         <Route path="shipments/new" element={<CreateShipment />} />
-                        {/*<Route path="shipments" element={<MyShipments />} />
-                        <Route path="station" element={<StationUpdate />} />*/}
+                        <Route path="shipments" element={<MyShipments />} />
+                        <Route path="update" element={<StationUpdate />} />
                     </Route>
 
                 </Route>

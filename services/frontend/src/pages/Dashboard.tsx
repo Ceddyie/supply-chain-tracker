@@ -40,7 +40,7 @@ export default function Dashboard() {
             const shipments = response.data;
             setStats({
                 total: shipments.length,
-                inTransit: shipments.filter((s: any) => s.currentStatus === "IN_TRANSIT").length,
+                inTransit: shipments.filter((s: any) => s.currentStatus !== "DELIVERED" && s.currentStatus !== "CREATED").length,
                 delivered: shipments.filter((s: any) => s.currentStatus === "DELIVERED").length,
                 pending: shipments.filter((s: any) => s.currentStatus === "CREATED").length,
             });
@@ -209,7 +209,7 @@ export default function Dashboard() {
                 </p>
                 <div className="mt-6">
                     <button
-                        onClick={() => navigate("/station")}
+                        onClick={() => navigate("/update")}
                         className="flex items-center gap-3 rounded-xl bg-amber-500/20 border border-amber-500/30 px-5 py-4 text-left font-medium text-white transition hover:bg-amber-500/30 cursor-pointer w-full sm:w-auto"
                     >
                         <span className="grid h-10 w-10 place-items-center rounded-lg bg-amber-500/30 text-amber-300 text-xl">
