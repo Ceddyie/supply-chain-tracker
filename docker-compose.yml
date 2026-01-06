@@ -72,5 +72,64 @@ services:
         echo ""
         echo "Setup complete!"
 
+  shipment-service:
+    build:
+      context: ./services/shipment-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/supplychain
+      - DATABASE_USER=supplychain
+      - DATABASE_PASSWORD=supplychain
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+      - PUBSUB_PROJECT_ID=local-project
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pubsub-init:
+        condition: service_completed_successfully
+
+  tracking-service:
+    build:
+      context: ./services/tracking-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+      - PUBSUB_PROJECT_ID=local-project
+    depends_on:
+      pubsub-init:
+        condition: service_completed_successfully
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SHIPMENT_SERVICE_URL=http://shipment-service:8080
+      - TRACKING_SERVICE_URL=http://tracking-service:8080
+      - FIREBASE_EMULATOR_ENABLED=true
+      - FIREBASE_EMULATOR_HOST=firebase-emulator:9099
+    depends_on:
+      - shipment-service
+      - tracking-service
+      - firebase-emulator
+
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+
 volumes:
   postgres_data:
