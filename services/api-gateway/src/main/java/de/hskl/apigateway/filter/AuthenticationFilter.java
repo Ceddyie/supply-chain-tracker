@@ -20,7 +20,7 @@ import java.util.List;
 @Component
 public class AuthenticationFilter implements GlobalFilter, Ordered {
 
-    @Value("${firebase.emulator.enabled}")
+    @Value("${FIREBASE_EMULATOR_ENABLED}")
     private boolean emulatorEnabled;
 
     private static Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
