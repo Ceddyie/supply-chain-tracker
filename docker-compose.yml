@@ -72,5 +72,78 @@ services:
         echo ""
         echo "Setup complete!"
 
+  shipment-service:
+    build:
+      context: ./services/shipment-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      - SHIPMENT_SERVICE_PORT=8080
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/supplychain
+      - POSTGRES_USER=supplychain
+      - POSTGRES_PASSWORD=supplychain
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+      - GCP_PROJECT_ID=local-project
+      - PUBSUB_TOPIC=tracking-updates
+      - PUBSUB_SUBSCRIPTION=tracking-updates-sub
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pubsub-init:
+        condition: service_completed_successfully
+
+  tracking-service:
+    build:
+      context: ./services/tracking-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8080"
+    environment:
+      - TRACKING_SERVICE_PORT=8080
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+      - GCP_PROJECT_ID=local-project
+      - PUBSUB_TOPIC=tracking-updates
+      - PUBSUB_SUBSCRIPTION=tracking-updates-sub
+    depends_on:
+      pubsub-init:
+        condition: service_completed_successfully
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SHIPMENT_SERVICE_URL=http://shipment-service:8080
+      - TRACKING_SERVICE_URL=http://tracking-service:8080
+      - FIREBASE_EMULATOR_ENABLED=true
+      - FIREBASE_EMULATOR_HOST=firebase-emulator:9099
+      - FIREBASE_AUTH_EMULATOR_HOST=firebase-emulator:9099
+    depends_on:
+      - shipment-service
+      - tracking-service
+      - firebase-emulator
+
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_USE_FIREBASE_EMULATOR: "true"
+        VITE_FIREBASE_PROJECT_ID: "local-project"
+        VITE_FIREBASE_API_KEY: "demo-api-key"
+        VITE_FIREBASE_AUTH_DOMAIN: "local-project.firebaseapp.com"
+        VITE_FIREBASE_AUTH_EMULATOR_URL: "http://localhost:9099"
+        VITE_FIREBASE_FUNCTIONS_EMULATOR_HOST: "localhost"
+        VITE_FIREBASE_FUNCTIONS_EMULATOR_PORT: "5001"
+        VITE_API_BASE_URL: "http://localhost:8080"
+    ports:
+      - "5173:80"
+    depends_on:
+      - api-gateway
+      - firebase-emulator
+
 volumes:
   postgres_data:
