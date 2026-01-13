@@ -9,11 +9,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.context.annotation.Profile;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
 @Configuration
+@Profile("!test")
 public class FirebaseConfig {
     private static Logger logger = LoggerFactory.getLogger(FirebaseConfig.class);
 
