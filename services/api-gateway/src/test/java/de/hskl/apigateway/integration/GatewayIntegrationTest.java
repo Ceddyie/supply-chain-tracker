@@ -50,7 +50,7 @@ public class GatewayIntegrationTest {
                 String.format("http://localhost:%s", shipmentServiceMock.getPort()));
         registry.add("TRACKING_SERVICE_URL", () ->
                 String.format("http://localhost:%s", trackingServiceMock.getPort()));
-        registry.add("FIREBASE_EMULATOR_ENABLED", () -> "false");
+        registry.add("FIREBASE_EMULATOR_ENABLED", () -> "true");
     }
 
     @Test
