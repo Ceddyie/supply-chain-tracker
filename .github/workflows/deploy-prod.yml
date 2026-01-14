@@ -72,6 +72,7 @@ jobs:
             --min-instances=0
             --max-instances=2
             --memory=512Mi
+            --timeout=600
 
   deploy-tracking:
     needs: build-and-push
@@ -92,7 +93,7 @@ jobs:
         env_vars: |
           SPRING_PROFILES_ACTIVE=prod
           GCP_PROJECT_ID=${{ env.PROJECT_ID }}
-          flags: |
+        flags: |
           --service-account=cloud-run-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
           --allow-unauthenticated
           --min-instances=0
@@ -133,12 +134,12 @@ jobs:
           TRACKING_SERVICE_URL=${{ steps.urls.outputs.tracking_url }}
           FIREBASE_EMULATOR_ENABLED=false
           GCP_PROJECT_ID=${{ env.PROJECT_ID }}
-          flags: |
+        flags: |
           --service-account=cloud-run-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
           --allow-unauthenticated
           --min-instances=0
           --max-instances=2
-          --memory=256Mi
+          --memory=512Mi
 
   deploy-frontend:
     needs: deploy-gateway
@@ -185,6 +186,7 @@ jobs:
         region: ${{ env.REGION }}
         image: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/supply-chain-tracker/frontend:${{ github.sha }}
         flags: |
+          --port=80
           --allow-unauthenticated
           --min-instances=0
           --max-instances=2

@@ -1,5 +1,6 @@
 package de.hskl.shipmentservice;
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.hskl.shipmentservice.controller.ShipmentController;
 import de.hskl.shipmentservice.dto.CreateShipmentDto;
 import de.hskl.shipmentservice.dto.ShipmentDetailDto;
@@ -13,7 +14,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -31,8 +32,8 @@ public class ShipmentControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
 
     @MockitoBean
     private ShipmentService shipmentService;
