@@ -29,6 +29,9 @@ public class FirebaseConfig {
     @Value("${firebase.emulator.host:localhost:9099}")
     private String emulatorHost;
 
+    @Value("${GCP_PROJECT_ID:}")
+    private String gcpProjectId;
+
     @PostConstruct
     public void init() {
         if (FirebaseApp.getApps().isEmpty()) {
@@ -45,11 +48,19 @@ public class FirebaseConfig {
                     logger.info("Firebase initialized with emulator at {}", emulatorHost);
                 } else {
                     // Production Mode
-                    FileInputStream serviceAccount = new FileInputStream(credentialsPath);
-                    options = FirebaseOptions.builder()
-                            .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                            .build();
-                    logger.info("Firebase initialized with service account");
+                    GoogleCredentials creds;
+
+                    if (credentialsPath != null && !credentialsPath.isBlank()) {
+                        creds = GoogleCredentials.fromStream(new FileInputStream(credentialsPath));
+                        logger.info("Firebase initialized with service account file");
+                    } else {
+                        creds = GoogleCredentials.getApplicationDefault();
+                        logger.info("Firebase initialized with Application Default Credentials (Cloud Run SA)");
+                    }
+
+                    FirebaseOptions.Builder b = FirebaseOptions.builder().setCredentials(creds);
+                    if (gcpProjectId != null && !gcpProjectId.isBlank()) b.setProjectId(gcpProjectId);
+                    options = b.build();
                 }
 
                 FirebaseApp.initializeApp(options);
