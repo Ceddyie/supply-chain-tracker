@@ -134,6 +134,7 @@ jobs:
           TRACKING_SERVICE_URL=${{ steps.urls.outputs.tracking_url }}
           FIREBASE_EMULATOR_ENABLED=false
           GCP_PROJECT_ID=${{ env.PROJECT_ID }}
+          FRONTEND_URL=https://frontend-pc5vhdie3a-ew.a.run.app
         flags: |
           --service-account=cloud-run-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
           --allow-unauthenticated
