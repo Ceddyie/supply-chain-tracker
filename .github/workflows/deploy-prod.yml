@@ -72,6 +72,7 @@ jobs:
             --min-instances=0
             --max-instances=2
             --memory=512Mi
+            --timeout=600
 
   deploy-tracking:
     needs: build-and-push

@@ -24,5 +24,4 @@ CREATE TABLE checkpoints (
     lng DOUBLE PRECISION
 );
 
-CREATE INDEX idx_shipments_company ON shipments(company_id);
 CREATE INDEX idx_checkpoints_shipment_ts ON checkpoints(shipment_id, ts);
