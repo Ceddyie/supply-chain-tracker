@@ -139,7 +139,7 @@ jobs:
           --allow-unauthenticated
           --min-instances=0
           --max-instances=2
-          --memory=256Mi
+          --memory=512Mi
 
   deploy-frontend:
     needs: deploy-gateway
