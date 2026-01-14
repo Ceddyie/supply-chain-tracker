@@ -1,0 +1,198 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: supply-chain-tracker-prod
+  REGION: europe-west1
+  REGISTRY: europe-west1-docker.pkg.dev
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [ shipment-service, tracking-service, api-gateway, frontend ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGISTRY }}
+
+      - name: Build and Push
+        run: |
+          docker build -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/supply-chain-tracker/${{ matrix.service }}:${{ github.sha }} \
+            -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/supply-chain-tracker/${{ matrix.service }}:latest \
+            ./services/${{ matrix.service }}
+              
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/supply-chain-tracker/${{ matrix.service }}:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/supply-chain-tracker/${{ matrix.service }}:latest
+
+  deploy-shipment:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: shipment-service
+          region: ${{ env.REGION }}
+          image: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/supply-chain-tracker/shipment-service:${{ github.sha }}
+          env_vars: |
+            SPRING_PROFILES_ACTIVE=prod
+            GCP_PROJECT_ID=${{ env.PROJECT_ID }}
+            DATABASE_NAME=supplychain
+            DATABASE_USER=supplychain
+            CLOUD_SQL_CONNECTION_NAME=${{ env.PROJECT_ID }}:${{ env.REGION }}:supply-chain-db
+          secrets: |
+            DATABASE_PASSWORD=db-password:latest
+          flags: |
+            --service-account=cloud-run-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
+            --add-cloudsql-instances=${{ env.PROJECT_ID }}:${{ env.REGION }}:supply-chain-db
+            --allow-unauthenticated
+            --min-instances=0
+            --max-instances=2
+            --memory=512Mi
+
+  deploy-tracking:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Google Auth
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Deploy to Cloud Run
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: tracking-service
+        region: ${{ env.REGION }}
+        image: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/supply-chain-tracker/tracking-service:${{ github.sha }}
+        env_vars: |
+          SPRING_PROFILES_ACTIVE=prod
+          GCP_PROJECT_ID=${{ env.PROJECT_ID }}
+          flags: |
+          --service-account=cloud-run-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
+          --allow-unauthenticated
+          --min-instances=0
+          --max-instances=2
+          --memory=256Mi
+
+  deploy-gateway:
+    needs: [ deploy-shipment, deploy-tracking ]
+    runs-on: ubuntu-latest
+
+    outputs:
+      gateway_url: ${{ steps.deploy.outputs.url }}
+
+    steps:
+    - name: Google Auth
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Get Service URLs
+      id: urls
+      run: |
+        SHIPMENT_URL=$(gcloud run services describe shipment-service --region=${{ env.REGION }} --format='value(status.url)')
+        TRACKING_URL=$(gcloud run services describe tracking-service --region=${{ env.REGION }} --format='value(status.url)')
+        echo "shipment_url=$SHIPMENT_URL" >> $GITHUB_OUTPUT
+        echo "tracking_url=$TRACKING_URL" >> $GITHUB_OUTPUT
+
+    - name: Deploy to Cloud Run
+      id: deploy
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: api-gateway
+        region: ${{ env.REGION }}
+        image: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/supply-chain-tracker/api-gateway:${{ github.sha }}
+        env_vars: |
+          SPRING_PROFILES_ACTIVE=prod
+          SHIPMENT_SERVICE_URL=${{ steps.urls.outputs.shipment_url }}
+          TRACKING_SERVICE_URL=${{ steps.urls.outputs.tracking_url }}
+          FIREBASE_EMULATOR_ENABLED=false
+          GCP_PROJECT_ID=${{ env.PROJECT_ID }}
+          flags: |
+          --service-account=cloud-run-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
+          --allow-unauthenticated
+          --min-instances=0
+          --max-instances=2
+          --memory=256Mi
+
+  deploy-frontend:
+    needs: deploy-gateway
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Google Auth
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Configure Docker
+      run: gcloud auth configure-docker ${{ env.REGISTRY }}
+
+    - name: Get Gateway URL
+      id: gateway
+      run: |
+        GATEWAY_URL=$(gcloud run services describe api-gateway --region=${{ env.REGION }} --format='value(status.url)')
+        echo "url=$GATEWAY_URL" >> $GITHUB_OUTPUT
+
+    - name: Build Frontend with Production Config
+      run: |
+        docker build \
+        --build-arg VITE_API_BASE_URL=${{ steps.gateway.outputs.url }} \
+        --build-arg VITE_FIREBASE_PROJECT_ID=${{ env.PROJECT_ID }} \
+        --build-arg VITE_FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }} \
+        --build-arg VITE_FIREBASE_AUTH_DOMAIN=${{ env.PROJECT_ID }}.firebaseapp.com \
+        --build-arg VITE_USE_FIREBASE_EMULATOR=false \
+        -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/supply-chain-tracker/frontend:${{ github.sha }} \
+        ./services/frontend
+
+        docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/supply-chain-tracker/frontend:${{ github.sha }}
+
+    - name: Deploy to Cloud Run
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: frontend
+        region: ${{ env.REGION }}
+        image: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/supply-chain-tracker/frontend:${{ github.sha }}
+        flags: |
+          --allow-unauthenticated
+          --min-instances=0
+          --max-instances=2
+          --memory=128Mi
+
+    - name: Output URLs
+      run: |
+        echo "🚀 Deployment complete!"
+        echo ""
+        echo "Frontend: $(gcloud run services describe frontend --region=${{ env.REGION }} --format='value(status.url)')"
+        echo "API Gateway: ${{ steps.gateway.outputs.url }}"
