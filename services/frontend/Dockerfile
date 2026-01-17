@@ -1,5 +1,4 @@
 FROM node:20-alpine AS build
-
 WORKDIR /app
 
 COPY package*.json ./
@@ -7,6 +6,7 @@ RUN npm ci
 
 COPY . .
 
+# Build-time args (kommen aus GitHub Actions via --build-arg)
 ARG VITE_USE_FIREBASE_EMULATOR=false
 ARG VITE_FIREBASE_PROJECT_ID=local-project
 ARG VITE_FIREBASE_API_KEY=demo-api-key
@@ -16,6 +16,7 @@ ARG VITE_FIREBASE_FUNCTIONS_EMULATOR_HOST=localhost
 ARG VITE_FIREBASE_FUNCTIONS_EMULATOR_PORT=5001
 ARG VITE_API_BASE_URL=http://localhost:8080
 
+# Make args available as env vars during `npm run build`
 ENV VITE_USE_FIREBASE_EMULATOR=$VITE_USE_FIREBASE_EMULATOR \
     VITE_FIREBASE_PROJECT_ID=$VITE_FIREBASE_PROJECT_ID \
     VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY \
@@ -28,10 +29,8 @@ ENV VITE_USE_FIREBASE_EMULATOR=$VITE_USE_FIREBASE_EMULATOR \
 RUN npm run build
 
 FROM nginx:alpine
-
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]
