@@ -36,12 +36,8 @@
             <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
             <exclusions>
                 <exclusion>
-                    <groupId>io.netty.incubator</groupId>
-                    <artifactId>netty-incubator-codec-quic</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.netty.incubator</groupId>
-                    <artifactId>netty-incubator-codec-http3</artifactId>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-codec-classes-quic</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>io.netty</groupId>
