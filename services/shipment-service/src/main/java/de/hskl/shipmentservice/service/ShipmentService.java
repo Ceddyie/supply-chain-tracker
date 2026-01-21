@@ -115,7 +115,7 @@ public class ShipmentService {
 
         Checkpoint checkpoint = Checkpoint.builder()
                 .shipment(shipment)
-                .timestamp(trackingUpdate.getTimestamp())
+                .timestamp(trackingUpdate.getTimestamp() != null ? trackingUpdate.getTimestamp() : Instant.now())
                 .status(trackingUpdate.getStatus())
                 .message(trackingUpdate.getMessage())
                 .lat(trackingUpdate.getLat())
