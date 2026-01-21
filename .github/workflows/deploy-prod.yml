@@ -96,7 +96,7 @@ jobs:
         flags: |
           --service-account=cloud-run-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
           --allow-unauthenticated
-          --min-instances=0
+          --min-instances=1
           --max-instances=2
           --memory=256Mi
 
