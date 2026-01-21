@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.concurrent.TimeUnit;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -21,7 +23,7 @@ public class PubSubPublisherService {
     public void publishTrackingUpdate(TrackingEvent event) {
         try {
             String json = objectMapper.writeValueAsString(event);
-            pubSubTemplate.publish(topicName, json);
+            pubSubTemplate.publish(topicName, json).get(30, TimeUnit.SECONDS);
             log.info("Published tracking update for shipment: {}", event.getShipmentId());
         } catch (Exception e) {
             log.error("Error serializing tracking event", e);
