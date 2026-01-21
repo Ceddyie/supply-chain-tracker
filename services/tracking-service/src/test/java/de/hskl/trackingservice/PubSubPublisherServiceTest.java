@@ -14,6 +14,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -46,7 +47,9 @@ public class PubSubPublisherServiceTest {
                 .timestamp(Instant.now())
                 .build();
 
-        when(pubSubTemplate.publish(anyString(), anyString())).thenReturn(null);
+        // Return a completed future to simulate successful publish
+        CompletableFuture<String> future = CompletableFuture.completedFuture("message-id");
+        when(pubSubTemplate.publish(anyString(), anyString())).thenReturn(future);
 
         publisherService.publishTrackingUpdate(trackingEvent);
 
@@ -57,5 +60,24 @@ public class PubSubPublisherServiceTest {
 
         assertEquals("test-topic", topicCaptor.getValue());
         assertTrue(messageCaptor.getValue().contains(trackingEvent.getShipmentId().toString()));
+    }
+
+    @Test
+    void publishTrackingUpdate_shouldThrowOnFailure() {
+        TrackingEvent trackingEvent = TrackingEvent.builder()
+                .shipmentId(UUID.randomUUID())
+                .status("IN_TRANSIT")
+                .message("Test message")
+                .lat(50.0)
+                .lng(8.0)
+                .timestamp(Instant.now())
+                .build();
+
+        // Return a failed future to simulate publish failure
+        CompletableFuture<String> failedFuture = new CompletableFuture<>();
+        failedFuture.completeExceptionally(new RuntimeException("Pub/Sub error"));
+        when(pubSubTemplate.publish(anyString(), anyString())).thenReturn(failedFuture);
+
+        assertThrows(RuntimeException.class, () -> publisherService.publishTrackingUpdate(trackingEvent));
     }
 }

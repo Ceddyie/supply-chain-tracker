@@ -18,9 +18,15 @@ public class TrackingController {
     public ResponseEntity<String> updateTracking(@RequestBody TrackingUpdateDto dto) {
         log.info("Received tracking update for shipment: {}", dto.shipmentId());
 
-        trackingService.processTrackingUpdate(dto);
-
-        return ResponseEntity.ok("Tracking update received");
+        try {
+            trackingService.processTrackingUpdate(dto);
+            log.info("Successfully sent tracking update for shipment: {}", dto.shipmentId());
+            return ResponseEntity.ok("Tracking update received");
+        } catch (Exception e) {
+            log.error("Failed to process tracking update for shipment: {}", dto.shipmentId(), e);
+            return ResponseEntity.internalServerError()
+                    .body("Failed to process tracking update: " + e.getMessage());
+        }
     }
 
     @GetMapping("/health")
