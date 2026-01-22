@@ -147,6 +147,34 @@ Danach:
 
 ---
 
+## Ändern der Rollen nach der Registrierung
+
+Um nach der Registrierung die Rolle eines Users zu ändern, etwa um ihn als STATION-Account nutzen zu können, muss man die Firebase Emulator Suite nutzen. 
+Hierzu folgt eine kleine Anleitung:
+
+### 1) Firebase Emulator Suite öffnen
+
+Nachdem alle Docker Container gestartet, wurden, lässt sich die Firebase Emulator Suite unter der Webadresse http://localhost:4000/ finden.
+Diese sollte dann wie folgt aussehen:
+<img width="1920" height="963" alt="image" src="https://github.com/user-attachments/assets/db034049-e44c-4731-9407-4f6311700610" />
+
+### 2) Auth Emulator öffnen
+
+In diesem Dashboard dann unter "Authentication emulator" den Button "Go to auth emulator" anklicken.
+<img width="423" height="268" alt="image" src="https://github.com/user-attachments/assets/6faff4a7-072f-4b36-94b9-c859c431f1dd" />
+
+### 3) User bearbeiten
+
+Im dann erscheinenden Fenster den entsprechenden User suchen und die 3 Punkte am Ende der Zeile anklicken:
+<img width="1258" height="113" alt="image" src="https://github.com/user-attachments/assets/d56fdaa7-014e-4e29-8397-422aa3f3f0b7" />
+
+Und bei Custom claims den Wert von "role" ändern, etwa zu "STATION", "SENDER" oder "CUSTOMER":
+<img width="520" height="109" alt="image" src="https://github.com/user-attachments/assets/7a5aff79-2201-4d26-8a05-faa9bdf05a56" />
+
+Anschließend speichern und mit dem Account neu einloggen.
+
+---
+
 ## API (über Gateway)
 
 Basis: http://localhost:8080/api
@@ -262,3 +290,4 @@ Tracking Timeline:
 ## Lizenz/Hinweise
 
 Dieses Repository ist primär für Lern-/Projektzwecke gedacht. Für eine Produktion sollten u. a. Rollenvergabe, Security (Claims), Logging, Tracing und Rechtekonzepte härter abgesichert werden.
+
